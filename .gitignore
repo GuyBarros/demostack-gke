@@ -7,3 +7,8 @@ consul/*
 *.root_token
 *.txt
 *.jwt
+*.token
+gossipEncryptionKey
+consul-federation-secret.yaml
+consul-acl-replication-acl-token.yaml
+cluster-1.cert

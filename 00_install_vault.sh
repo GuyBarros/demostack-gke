@@ -8,7 +8,7 @@ source helper.sh
 c1_kctl apply -f dns/ExternalDNS-cluster-1.yaml
 c2_kctl apply -f dns/ExternalDNS-cluster-2.yaml
 
-VAULT_HELM_VERSION=0.8.0
+VAULT_HELM_VERSION=0.9.0
 
 source cross_tls.sh
 function setup-vault {
@@ -45,6 +45,11 @@ function setup-vault {
   sleep 15 # waiting for the unsealing process and for the nodes to join.
   fi
 
+  echo ".: Waiting for Cluster-$1 Vault Active Leader IP address"
+  while ! kubectl get svc vault-active -o jsonpath={..ip} --allow-missing-template-keys=false 2>/dev/null; do
+    sleep 3
+  done
+  echo ""
   export VAULT_ADDR=https://$(kubectl get svc vault-active -o jsonpath={..ip} --allow-missing-template-keys=false):8200
   echo "Checking if Vault $1 is ready"
   while ! curl -k $VAULT_ADDR/sys/health -s --show-error; do

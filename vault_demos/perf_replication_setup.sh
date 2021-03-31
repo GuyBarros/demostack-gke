@@ -1,8 +1,7 @@
 #! /bin/bash
-source helper.sh
-set -e
-set -u
-set -o pipefail
+# source helper.sh
+# set -eu
+# set -o pipefail
 
 vault1_ctx
 vault write -force  sys/replication/performance/primary/disable || true
@@ -32,11 +31,17 @@ vault write sys/replication/performance/primary/secondary-token id=vault-200 \
 
 echo ".: got the token, now setting up second cluster"
 vault2_ctx
+vault write  -force  /sys/replication/performance/secondary/disable || true
+sleep 2
 vault write /sys/replication/performance/secondary/enable \
     token=$(cat token.jwt)
 
-
 sleep 5
+echo "Checking if Vault 2 is ready"
+while ! curl -k $VAULT_ADDR/sys/health -s --show-error; do
+  sleep 2
+  echo "Waiting for Vault 2 to be ready"
+done
 # Generate new root token
 echo ".: generating root token for cluster-2"
 vault operator generate-root -generate-otp -format=json | jq -r .otp > otp.delete
@@ -46,6 +51,4 @@ vault operator generate-root \
   -decode=$(cat encoded_token.delete) \
   -otp=$(cat otp.delete) > cluster-2.root_token
 
-
-# detect_endpoints;
-# c1_kctx;
+vault1_ctx
